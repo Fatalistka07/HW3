@@ -37,7 +37,7 @@ public class Main {
         //titleRow.createCell(colIx++).setCellValue("Возраст");
         titleRow.createCell(colIx++).setCellValue("Пол");
         //titleRow.createCell(colIx++).setCellValue("Дата рождения");
-        //titleRow.createCell(colIx++).setCellValue("ИНН");
+        titleRow.createCell(colIx++).setCellValue("ИНН");
         titleRow.createCell(colIx++).setCellValue("Почтовый индекс");
         titleRow.createCell(colIx++).setCellValue("Страна");
         titleRow.createCell(colIx++).setCellValue("Область");
@@ -64,7 +64,7 @@ public class Main {
                 row.createCell(colIx++).setCellValue("Ж");
             }
             // bd
-            // INN
+            row.createCell(colIx++).setCellValue(getRandInn(r));
             row.createCell(colIx++).setCellValue(100000 + r.nextInt(100000));
             row.createCell(colIx++).setCellValue(countries.get(r.nextInt(countries.size())));
             row.createCell(colIx++).setCellValue(regions.get(r.nextInt(regions.size())));
@@ -85,11 +85,44 @@ public class Main {
     private static ArrayList<String> getArrayFromFilePath(String filePath) throws IOException {
         FileInputStream fstream = new FileInputStream(filePath);
         Scanner scanner = new Scanner(new InputStreamReader(fstream));
-        String strLine;
         ArrayList<String> result = new ArrayList<String>();
         while ( scanner.hasNext()) {
             result.add(scanner.nextLine());
         }
         return result;
+    }
+    private static long getRandInn(Random r){
+        int inspection = 1 + r.nextInt(36);
+        int [] innDigits = {
+                0,
+                0,
+                r.nextInt(10),
+                r.nextInt(10),
+                r.nextInt(10),
+                r.nextInt(10),
+                r.nextInt(10),
+                r.nextInt(10),
+                inspection % 10,
+                inspection / 10,
+                7,
+                7};
+        int [] const11 = {0, 0, 8, 6, 4, 9, 5, 3, 10, 4, 2, 7};
+        int [] const12 = {0, 8, 6, 4, 9, 5, 3, 10, 4, 2, 7, 3};
+        int sum = 0;
+        for (int i=2; i<12; i++){
+            sum += const11[i] * innDigits[i];
+        }
+        innDigits[1] = sum % 11 % 10;
+        sum = 0;
+        for (int i=1; i<12; i++){
+            sum += const12[i] * innDigits[i];
+        }
+        innDigits[0] = sum % 11 % 10;
+        long power = 1;
+        long inn = 0;
+        for (int i=0; i<12; i++, power *= 10){
+            inn += innDigits[i] * power;
+        }
+        return inn;
     }
 }
