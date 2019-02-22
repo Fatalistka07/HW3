@@ -7,9 +7,9 @@ import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.Random;
-import java.util.Scanner;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.*;
 
 public class Main {
 
@@ -25,6 +25,9 @@ public class Main {
         ArrayList<String> womenPatronymics = getArrayFromFilePath("./resources/WomenPatronymics.txt");
         ArrayList<String> womenSurnames = getArrayFromFilePath("./resources/WomenSurnames.txt");
 
+        DateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy");
+        dateFormat.setLenient(false);
+
         Random r = new Random();
         int n = 1 + r.nextInt(30);
         Workbook book = new HSSFWorkbook();
@@ -36,7 +39,7 @@ public class Main {
         titleRow.createCell(colIx++).setCellValue("Отчество");
         //titleRow.createCell(colIx++).setCellValue("Возраст");
         titleRow.createCell(colIx++).setCellValue("Пол");
-        //titleRow.createCell(colIx++).setCellValue("Дата рождения");
+        titleRow.createCell(colIx++).setCellValue("Дата рождения");
         titleRow.createCell(colIx++).setCellValue("ИНН");
         titleRow.createCell(colIx++).setCellValue("Почтовый индекс");
         titleRow.createCell(colIx++).setCellValue("Страна");
@@ -51,6 +54,8 @@ public class Main {
 
             boolean isMan = r.nextBoolean();
 
+            Date bd = getRandBD(r);
+
             colIx = 0;
             if (isMan) {
                 row.createCell(colIx++).setCellValue(manNames.get(r.nextInt(manNames.size())));
@@ -63,7 +68,7 @@ public class Main {
                 row.createCell(colIx++).setCellValue(womenPatronymics.get(r.nextInt(womenPatronymics.size())));
                 row.createCell(colIx++).setCellValue("Ж");
             }
-            // bd
+            row.createCell(colIx++).setCellValue(dateFormat.format(bd));
             row.createCell(colIx++).setCellValue(getRandInn(r));
             row.createCell(colIx++).setCellValue(100000 + r.nextInt(100000));
             row.createCell(colIx++).setCellValue(countries.get(r.nextInt(countries.size())));
@@ -124,5 +129,12 @@ public class Main {
             inn += innDigits[i] * power;
         }
         return inn;
+    }
+
+    private static Date getRandBD(Random r){
+        GregorianCalendar gc = new GregorianCalendar();
+        gc.set(gc.YEAR, 1930 + r.nextInt(80));
+        gc.set(gc.DAY_OF_YEAR, 1 + r.nextInt(gc.getActualMaximum(gc.DAY_OF_YEAR)));
+        return gc.getTime();
     }
 }
