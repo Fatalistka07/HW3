@@ -7,13 +7,21 @@ import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 
 import java.io.*;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.nio.file.Paths;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.Period;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 public class Main {
 
-    public static void main(String[] args) throws IOException {
+    public static final String ExcelFileName = "Clients.xls";
+
+    public static void main(String[] args) throws IOException, URISyntaxException {
         ArrayList<String> cities = getArrayFromFilePath("./resources/Cities.txt");
         ArrayList<String> countries = getArrayFromFilePath("./resources/Countries.txt");
         ArrayList<String> manNames = getArrayFromFilePath("./resources/ManNames.txt");
@@ -25,9 +33,6 @@ public class Main {
         ArrayList<String> womenPatronymics = getArrayFromFilePath("./resources/WomenPatronymics.txt");
         ArrayList<String> womenSurnames = getArrayFromFilePath("./resources/WomenSurnames.txt");
 
-        DateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy");
-        dateFormat.setLenient(false);
-
         Random r = new Random();
         int n = 1 + r.nextInt(30);
         Workbook book = new HSSFWorkbook();
@@ -37,7 +42,7 @@ public class Main {
         titleRow.createCell(colIx++).setCellValue("Имя");
         titleRow.createCell(colIx++).setCellValue("Фамилия");
         titleRow.createCell(colIx++).setCellValue("Отчество");
-        //titleRow.createCell(colIx++).setCellValue("Возраст");
+        titleRow.createCell(colIx++).setCellValue("Возраст");
         titleRow.createCell(colIx++).setCellValue("Пол");
         titleRow.createCell(colIx++).setCellValue("Дата рождения");
         titleRow.createCell(colIx++).setCellValue("ИНН");
@@ -54,21 +59,22 @@ public class Main {
 
             boolean isMan = r.nextBoolean();
 
-            Date bd = getRandBD(r);
+            LocalDate bd = getRandBD(r);
 
             colIx = 0;
             if (isMan) {
                 row.createCell(colIx++).setCellValue(manNames.get(r.nextInt(manNames.size())));
                 row.createCell(colIx++).setCellValue(manSurnames.get(r.nextInt(manSurnames.size())));
                 row.createCell(colIx++).setCellValue(manPatronymics.get(r.nextInt(manPatronymics.size())));
-                row.createCell(colIx++).setCellValue("М");
             } else {
                 row.createCell(colIx++).setCellValue(womenNames.get(r.nextInt(womenNames.size())));
                 row.createCell(colIx++).setCellValue(womenSurnames.get(r.nextInt(womenSurnames.size())));
                 row.createCell(colIx++).setCellValue(womenPatronymics.get(r.nextInt(womenPatronymics.size())));
-                row.createCell(colIx++).setCellValue("Ж");
             }
-            row.createCell(colIx++).setCellValue(dateFormat.format(bd));
+            row.createCell(colIx++).setCellValue(Period.between(bd,
+                    LocalDate.now()).getYears());
+            row.createCell(colIx++).setCellValue(isMan ? "М" : "Ж");
+            row.createCell(colIx++).setCellValue(bd.format(DateTimeFormatter.ofPattern("dd.MM.yyyy")));
             row.createCell(colIx++).setCellValue(getRandInn(r));
             row.createCell(colIx++).setCellValue(100000 + r.nextInt(100000));
             row.createCell(colIx++).setCellValue(countries.get(r.nextInt(countries.size())));
@@ -83,8 +89,9 @@ public class Main {
         for (colIx = 0; colIx < 14; colIx++) {
             sheet.autoSizeColumn(colIx);
         }
-        book.write(new FileOutputStream("Clients.xls"));
+        book.write(new FileOutputStream(ExcelFileName));
         book.close();
+        System.out.println(new File(ExcelFileName).getAbsolutePath());
     }
 
     private static ArrayList<String> getArrayFromFilePath(String filePath) throws IOException {
@@ -131,10 +138,9 @@ public class Main {
         return inn;
     }
 
-    private static Date getRandBD(Random r){
-        GregorianCalendar gc = new GregorianCalendar();
-        gc.set(gc.YEAR, 1930 + r.nextInt(80));
-        gc.set(gc.DAY_OF_YEAR, 1 + r.nextInt(gc.getActualMaximum(gc.DAY_OF_YEAR)));
-        return gc.getTime();
+    private static LocalDate getRandBD(Random r){
+        int year = 1930 + r.nextInt(80);
+        int day = 1 + r.nextInt(LocalDate.of(year, 1, 1).lengthOfYear());
+        return LocalDate.ofYearDay(year, day);
     }
 }
