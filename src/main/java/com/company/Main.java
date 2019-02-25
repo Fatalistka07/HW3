@@ -1,11 +1,19 @@
 package com.company;
 
+import org.apache.fop.apps.Fop;
+import org.apache.fop.apps.FopFactory;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 
+import javax.xml.transform.Result;
+import javax.xml.transform.Source;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.sax.SAXResult;
+import javax.xml.transform.stream.StreamSource;
 import java.io.*;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -20,6 +28,7 @@ import java.util.*;
 public class Main {
 
     public static final String ExcelFileName = "Clients.xls";
+    public static final String PdfFileName = "Clients.pdf";
 
     public static void main(String[] args) throws IOException, URISyntaxException {
         ArrayList<String> cities = getArrayFromFilePath("./resources/Cities.txt");
@@ -92,6 +101,9 @@ public class Main {
         book.write(new FileOutputStream(ExcelFileName));
         book.close();
         System.out.println(new File(ExcelFileName).getAbsolutePath());
+        String xmlStr = convertExcelToXmlString(sheet);
+        convertXmlToString(xmlStr);
+        System.out.println(new File(PdfFileName).getAbsolutePath());
     }
 
     private static ArrayList<String> getArrayFromFilePath(String filePath) throws IOException {
@@ -143,4 +155,46 @@ public class Main {
         int day = 1 + r.nextInt(LocalDate.of(year, 1, 1).lengthOfYear());
         return LocalDate.ofYearDay(year, day);
     }
+    private static String convertExcelToXmlString(Sheet sheet) {
+        StringBuffer sb = new StringBuffer();
+        sb.append("<?xml version=\"1.0\" encoding=\"utf-8\"?>\n\n<fo:root xmlns:fo=\"http://www.w3.org/1999/XSL/Format\">\n\n    <fo:layout-master-set>\n        <fo:simple-page-master master-name=\"spm\"\n                               page-height=\"29.7cm\"\n                               page-width=\"21cm\"\n                               margin-top=\"1cm\"\n                               margin-bottom=\"1cm\"\n                               margin-left=\"1cm\"\n                               margin-right=\"1cm\">\n            <fo:region-body/>\n        </fo:simple-page-master>\n    </fo:layout-master-set>\n\n    <fo:page-sequence master-reference=\"spm\">\n        <fo:flow flow-name=\"xsl-region-body\">\n\n            <fo:block font-weight=\"bold\" font-size=\"16pt\" font-family=\"sans-serif\" line-height=\"24pt\"\n                      space-after.optimum=\"15pt\" text-align=\"center\" padding-top=\"3pt\">\n                Credit card processing statement\n            </fo:block>\n\n" +
+                "<fo:table table-layout=\"fixed\" width=\"100%\" border-collapse=\"separate\">\n   <fo:table-column column-width=\"19mm\"/>\n   <fo:table-column column-width=\"19\"/>\n                <fo:table-column column-width=\"19mm\"/>\n                <fo:table-column column-width=\"19mm\"/>\n  <fo:table-column column-width=\"19mm\"/>\n <fo:table-column column-width=\"19mm\"/>\n <fo:table-column column-width=\"19mm\"/>\n <fo:table-column column-width=\"19mm\"/>\n <fo:table-column column-width=\"19mm\"/>\n <fo:table-column column-width=\"19mm\"/>\n <fo:table-column column-width=\"19mm\"/>\n <fo:table-column column-width=\"19mm\"/>\n <fo:table-column column-width=\"19mm\"/>\n <fo:table-column column-width=\"19mm\"/>\n  <fo:table-body>");
+
+        for (int rowIx = sheet.getFirstRowNum();rowIx < sheet.getLastRowNum(); rowIx++){
+            Row row = sheet.getRow(rowIx);
+            sb.append("<fo:table-row>\n");
+            for (int colIx = row.getFirstCellNum(); colIx < row.getLastCellNum(); colIx++){
+                Cell cell = row.getCell(colIx);
+                sb.append("<fo:table-cell> <fo:block font-size=\"6pt\">");
+                //font-family=\"serif\">\n"
+                switch (cell.getCellType())
+                {
+                    case 1: sb.append(cell.getStringCellValue()); break;
+                    case 0: sb.append(cell.getNumericCellValue()); break;
+                }
+
+                sb.append("</fo:block>\n </fo:table-cell>\n");
+            }
+            sb.append("</fo:table-row>\n");
+        }
+        sb.append("</fo:table-body>\n </fo:table>\n </fo:flow>\n </fo:page-sequence>\n </fo:root>");
+        return sb.toString();
+    }
+    private static void convertXmlToString(String xmlStr){
+        FopFactory fopFactory = FopFactory.newInstance();
+        TransformerFactory transformerFactory = TransformerFactory.newInstance();
+
+        try {
+            Fop fop = fopFactory.newFop("application/pdf", new FileOutputStream(PdfFileName));
+            Transformer transformer = transformerFactory.newTransformer();
+            Source source = new StreamSource(new ByteArrayInputStream(xmlStr.getBytes("UTF8")));
+            Result result = new SAXResult(fop.getDefaultHandler());
+            transformer.transform(source, result);
+        } catch (Exception var8) {
+            System.err.println("Error of PDf generating: " + var8.getLocalizedMessage());
+        }
+
+    }
+
+
 }
