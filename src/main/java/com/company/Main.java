@@ -2,6 +2,11 @@ package com.company;
 
 import org.apache.fop.apps.Fop;
 import org.apache.fop.apps.FopFactory;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.utils.URIBuilder;
+import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.*;
 
@@ -16,6 +21,8 @@ import java.net.URISyntaxException;
 import java.time.LocalDate;
 import java.util.*;
 
+import static org.apache.http.HttpHeaders.USER_AGENT;
+
 public class Main {
 
     public static final String ExcelFileName = "Clients.xls";
@@ -24,12 +31,27 @@ public class Main {
     public static void main(String[] args) throws IOException, URISyntaxException {
         Random r = new Random();
         int n = 1 + r.nextInt(30);
-
+requestClients(n);
         Client[] clients = generateClients(r, n);
 
-        generateExcel(clients);
+        //generateExcel(clients);
 
-        generatePdf(clients);
+        //generatePdf(clients);
+    }
+
+    private static void requestClients(int n) throws URISyntaxException, IOException {
+        HttpClient client = HttpClientBuilder.create().build();
+        URIBuilder uriBuilder = new URIBuilder("https://randomuser.me/api/");
+        uriBuilder.setParameter("results", Integer.toString(n));
+        HttpGet request = new HttpGet(uriBuilder.build());
+        HttpResponse response = client.execute(request);
+        BufferedReader reader = new BufferedReader(new InputStreamReader(response.getEntity().getContent()));
+        String line = "";
+        StringBuffer result = new StringBuffer();
+        while ((line = reader.readLine()) != null) {
+            result.append(line);
+        }
+        System.out.println(result.toString());
     }
 
     private static Client[] generateClients(Random r, int n) throws IOException {
