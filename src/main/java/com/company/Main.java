@@ -13,13 +13,7 @@ import javax.xml.transform.sax.SAXResult;
 import javax.xml.transform.stream.StreamSource;
 import java.io.*;
 import java.net.URISyntaxException;
-import java.net.URL;
-import java.nio.file.Paths;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.time.LocalDate;
-import java.time.Period;
-import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 public class Main {
@@ -28,6 +22,17 @@ public class Main {
     public static final String PdfFileName = "Clients.pdf";
 
     public static void main(String[] args) throws IOException, URISyntaxException {
+        Random r = new Random();
+        int n = 1 + r.nextInt(30);
+
+        Client[] clients = generateClients(r, n);
+
+        generateExcel(clients);
+
+        generatePdf(clients);
+    }
+
+    private static Client[] generateClients(Random r, int n) throws IOException {
         ArrayList<String> cities = getArrayFromFilePath("./resources/Cities.txt");
         ArrayList<String> countries = getArrayFromFilePath("./resources/Countries.txt");
         ArrayList<String> manNames = getArrayFromFilePath("./resources/ManNames.txt");
@@ -39,73 +44,32 @@ public class Main {
         ArrayList<String> womenPatronymics = getArrayFromFilePath("./resources/WomenPatronymics.txt");
         ArrayList<String> womenSurnames = getArrayFromFilePath("./resources/WomenSurnames.txt");
 
-        Random r = new Random();
-        int n = 1 + r.nextInt(30);
-        Workbook book = new HSSFWorkbook();
-        Sheet sheet = book.createSheet("Clients");
-        Row titleRow = sheet.createRow(0);
-        int colIx = 0;
-        titleRow.createCell(colIx++).setCellValue("Имя");
-        titleRow.createCell(colIx++).setCellValue("Фамилия");
-        titleRow.createCell(colIx++).setCellValue("Отчество");
-        titleRow.createCell(colIx++).setCellValue("Возраст");
-        titleRow.createCell(colIx++).setCellValue("Пол");
-        titleRow.createCell(colIx++).setCellValue("Дата рождения");
-        titleRow.createCell(colIx++).setCellValue("ИНН");
-        titleRow.createCell(colIx++).setCellValue("Индекс");
-        titleRow.createCell(colIx++).setCellValue("Страна");
-        titleRow.createCell(colIx++).setCellValue("Область");
-        titleRow.createCell(colIx++).setCellValue("Город");
-        titleRow.createCell(colIx++).setCellValue("Улица");
-        titleRow.createCell(colIx++).setCellValue("Дом");
-        titleRow.createCell(colIx++).setCellValue("Кв.");
-
-        DataFormat format = book.createDataFormat();
-        CellStyle innStyle = book.createCellStyle();
-        innStyle.setDataFormat(format.getFormat("#"));
-        for (int rowIx = 1; rowIx <= n; rowIx++) {
-            Row row = sheet.createRow(rowIx);
-
-            boolean isMan = r.nextBoolean();
-
-            LocalDate bd = getRandBD(r);
-
-            colIx = 0;
-            if (isMan) {
-                row.createCell(colIx++).setCellValue(manNames.get(r.nextInt(manNames.size())));
-                row.createCell(colIx++).setCellValue(manSurnames.get(r.nextInt(manSurnames.size())));
-                row.createCell(colIx++).setCellValue(manPatronymics.get(r.nextInt(manPatronymics.size())));
+        Client [] clients = new Client[n];
+        for (int i = 0; i < n; i++) {
+            clients[i] = new Client();
+            if (r.nextBoolean()) {
+                clients[i].sex = "м";
+                clients[i].name = manNames.get(r.nextInt(manNames.size()));
+                clients[i].surname = manSurnames.get(r.nextInt(manSurnames.size()));
+                clients[i].patronymic = manPatronymics.get(r.nextInt(manPatronymics.size()));
             } else {
-                row.createCell(colIx++).setCellValue(womenNames.get(r.nextInt(womenNames.size())));
-                row.createCell(colIx++).setCellValue(womenSurnames.get(r.nextInt(womenSurnames.size())));
-                row.createCell(colIx++).setCellValue(womenPatronymics.get(r.nextInt(womenPatronymics.size())));
+                clients[i].sex = "ж";
+                clients[i].name = womenNames.get(r.nextInt(manNames.size()));
+                clients[i].surname = womenSurnames.get(r.nextInt(manSurnames.size()));
+                clients[i].patronymic = womenPatronymics.get(r.nextInt(manPatronymics.size()));
             }
-            row.createCell(colIx++).setCellValue(Period.between(bd,
-                    LocalDate.now()).getYears());
-            row.createCell(colIx++).setCellValue(isMan ? "М" : "Ж");
-            row.createCell(colIx++).setCellValue(bd.format(DateTimeFormatter.ofPattern("dd.MM.yyyy")));
-            Cell innCell = row.createCell(colIx++);
-            innCell.setCellStyle(innStyle);
-            innCell.setCellValue(getRandInn(r));
-            row.createCell(colIx++).setCellValue(100000 + r.nextInt(100000));
-            row.createCell(colIx++).setCellValue(countries.get(r.nextInt(countries.size())));
-            row.createCell(colIx++).setCellValue(regions.get(r.nextInt(regions.size())));
-            row.createCell(colIx++).setCellValue(cities.get(r.nextInt(cities.size())));
-            row.createCell(colIx++).setCellValue(streets.get(r.nextInt(streets.size())));
-            row.createCell(colIx++).setCellValue(1 + r.nextInt(100));
-            row.createCell(colIx++).setCellValue(1 + r.nextInt(200));
 
-
+            clients[i].birthDay = getRandBD(r);
+            clients[i].inn = getRandInn(r);
+            clients[i].index = 100000 + r.nextInt(100000);
+            clients[i].country = countries.get(r.nextInt(countries.size()));
+            clients[i].region = regions.get(r.nextInt(regions.size()));
+            clients[i].city = cities.get(r.nextInt(cities.size()));
+            clients[i].street = streets.get(r.nextInt(streets.size()));
+            clients[i].home = 1 + r.nextInt(100);
+            clients[i].flat = 1 + r.nextInt(200);
         }
-        for (colIx = 0; colIx < 14; colIx++) {
-            sheet.autoSizeColumn(colIx);
-        }
-        book.write(new FileOutputStream(ExcelFileName));
-        book.close();
-        System.out.println(new File(ExcelFileName).getAbsolutePath());
-        String xmlStr = convertExcelToXmlString(sheet);
-        convertXmlToString(xmlStr);
-        System.out.println(new File(PdfFileName).getAbsolutePath());
+        return clients;
     }
 
     private static ArrayList<String> getArrayFromFilePath(String filePath) throws IOException {
@@ -157,7 +121,65 @@ public class Main {
         int day = 1 + r.nextInt(LocalDate.of(year, 1, 1).lengthOfYear());
         return LocalDate.ofYearDay(year, day);
     }
-    private static String convertExcelToXmlString(Sheet sheet) {
+
+    private static void generateExcel(Client[] clients) throws IOException {
+        Workbook book = new HSSFWorkbook();
+        Sheet sheet = book.createSheet("Clients");
+        Row titleRow = sheet.createRow(0);
+        int colIx = 0;
+        titleRow.createCell(colIx++).setCellValue("Имя");
+        titleRow.createCell(colIx++).setCellValue("Фамилия");
+        titleRow.createCell(colIx++).setCellValue("Отчество");
+        titleRow.createCell(colIx++).setCellValue("Возраст");
+        titleRow.createCell(colIx++).setCellValue("Пол");
+        titleRow.createCell(colIx++).setCellValue("Дата рождения");
+        titleRow.createCell(colIx++).setCellValue("ИНН");
+        titleRow.createCell(colIx++).setCellValue("Индекс");
+        titleRow.createCell(colIx++).setCellValue("Страна");
+        titleRow.createCell(colIx++).setCellValue("Область");
+        titleRow.createCell(colIx++).setCellValue("Город");
+        titleRow.createCell(colIx++).setCellValue("Улица");
+        titleRow.createCell(colIx++).setCellValue("Дом");
+        titleRow.createCell(colIx++).setCellValue("Кв.");
+
+        DataFormat format = book.createDataFormat();
+        CellStyle innStyle = book.createCellStyle();
+        innStyle.setDataFormat(format.getFormat("#"));
+        for (int rowIx = 1; rowIx <= clients.length; rowIx++) {
+            Row row = sheet.createRow(rowIx);
+            colIx = 0;
+            row.createCell(colIx++).setCellValue(clients[rowIx-1].name);
+            row.createCell(colIx++).setCellValue(clients[rowIx-1].surname);
+            row.createCell(colIx++).setCellValue(clients[rowIx-1].patronymic);
+            row.createCell(colIx++).setCellValue(clients[rowIx-1].age());
+            row.createCell(colIx++).setCellValue(clients[rowIx-1].sex);
+            row.createCell(colIx++).setCellValue(clients[rowIx-1].birthDayStr());
+            Cell innCell = row.createCell(colIx++);
+            innCell.setCellStyle(innStyle);
+            innCell.setCellValue(clients[rowIx-1].inn);
+            row.createCell(colIx++).setCellValue(clients[rowIx-1].index);
+            row.createCell(colIx++).setCellValue(clients[rowIx-1].country);
+            row.createCell(colIx++).setCellValue(clients[rowIx-1].region);
+            row.createCell(colIx++).setCellValue(clients[rowIx-1].city);
+            row.createCell(colIx++).setCellValue(clients[rowIx-1].street);
+            row.createCell(colIx++).setCellValue(clients[rowIx-1].home);
+            row.createCell(colIx++).setCellValue(clients[rowIx-1].flat);
+        }
+        for (colIx = 0; colIx < 14; colIx++) {
+            sheet.autoSizeColumn(colIx);
+        }
+        book.write(new FileOutputStream(ExcelFileName));
+        book.close();
+        System.out.println(new File(ExcelFileName).getAbsolutePath());
+    }
+
+    private static void generatePdf(Client[] clients) {
+        String xmlStr = generateXml(clients);
+        convertXmlToPdf(xmlStr);
+        System.out.println(new File(PdfFileName).getAbsolutePath());
+    }
+
+    private static String generateXml(Client[] clients) {
         StringBuffer sb = new StringBuffer();
         sb.append("<?xml version=\"1.0\" encoding=\"utf-8\"?>\n\n<fo:root xmlns:fo=\"http://www.w3.org/1999/XSL/Format\">\n\n    <fo:layout-master-set>\n        <fo:simple-page-master master-name=\"spm\"\n                               page-height=\"29.7cm\"\n                               page-width=\"21cm\"\n                               margin-top=\"1cm\"\n                               margin-bottom=\"1cm\"\n                               margin-left=\"1cm\"\n                               margin-right=\"1cm\">\n            <fo:region-body/>\n        </fo:simple-page-master>\n    </fo:layout-master-set>\n\n    <fo:page-sequence master-reference=\"spm\">\n        <fo:flow flow-name=\"xsl-region-body\">\n\n" +
                 "<fo:table table-layout=\"fixed\" width=\"100%\" border-collapse=\"separate\">\n" +
@@ -177,26 +199,53 @@ public class Main {
                 "   <fo:table-column column-width=\"5mm\"/>\n" +
                 " <fo:table-body>");
 
-        for (int rowIx = sheet.getFirstRowNum();rowIx < sheet.getLastRowNum(); rowIx++){
-            Row row = sheet.getRow(rowIx);
-            sb.append("<fo:table-row>\n");
-            for (int colIx = row.getFirstCellNum(); colIx < row.getLastCellNum(); colIx++){
-                Cell cell = row.getCell(colIx);
-                sb.append("<fo:table-cell> <fo:block font-family=\"arial\" font-size=\"6pt\"> \n");
-                switch (cell.getCellType())
-                {
-                    case 1: sb.append(cell.getStringCellValue()); break;
-                    case 0: sb.append(cell.getNumericCellValue()); break;
-                }
+        // table header
+        sb.append("<fo:table-row>\n");
+        xmlAddCell(sb, "Имя");
+        xmlAddCell(sb, "Фамилия");
+        xmlAddCell(sb, "Отчество");
+        xmlAddCell(sb, "Возраст");
+        xmlAddCell(sb, "Пол");
+        xmlAddCell(sb, "Дата рождения");
+        xmlAddCell(sb, "ИНН");
+        xmlAddCell(sb, "Индекс");
+        xmlAddCell(sb, "Страна");
+        xmlAddCell(sb, "Область");
+        xmlAddCell(sb, "Город");
+        xmlAddCell(sb, "Улица");
+        xmlAddCell(sb, "Дом");
+        xmlAddCell(sb, "Кв.");
+        sb.append("</fo:table-row>\n");
 
-                sb.append("</fo:block>\n </fo:table-cell>\n");
-            }
+        for (int i = 0; i < clients.length; i++){
+            sb.append("<fo:table-row>\n");
+            xmlAddCell(sb, clients[i].name);
+            xmlAddCell(sb, clients[i].surname);
+            xmlAddCell(sb, clients[i].patronymic);
+            xmlAddCell(sb, Integer.toString(clients[i].age()));
+            xmlAddCell(sb, clients[i].sex);
+            xmlAddCell(sb, clients[i].birthDayStr());
+            xmlAddCell(sb, Long.toString(clients[i].inn));
+            xmlAddCell(sb, Integer.toString(clients[i].index));
+            xmlAddCell(sb, clients[i].country);
+            xmlAddCell(sb, clients[i].region);
+            xmlAddCell(sb, clients[i].city);
+            xmlAddCell(sb, clients[i].street);
+            xmlAddCell(sb, Integer.toString(clients[i].home));
+            xmlAddCell(sb, Integer.toString(clients[i].flat));
             sb.append("</fo:table-row>\n");
         }
         sb.append("</fo:table-body>\n </fo:table>\n </fo:flow>\n </fo:page-sequence>\n </fo:root>");
         return sb.toString();
     }
-    private static void convertXmlToString(String xmlStr){
+
+    private static void xmlAddCell(StringBuffer sb, String cellValue) {
+        sb.append("<fo:table-cell> <fo:block font-family=\"Arial\" font-size=\"6pt\"> \n");
+        sb.append(cellValue);
+        sb.append("</fo:block>\n </fo:table-cell>\n");
+    }
+
+    private static void convertXmlToPdf(String xmlStr){
         FopFactory fopFactory = FopFactory.newInstance();
         TransformerFactory transformerFactory = TransformerFactory.newInstance();
 
@@ -211,6 +260,4 @@ public class Main {
         }
 
     }
-
-
 }
