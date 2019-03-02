@@ -1,126 +1,31 @@
 package com.company;
 
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.time.LocalDate;
-import java.time.Period;
-import java.time.format.DateTimeFormatter;
-import java.util.Date;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+public interface Client {
+    String getSurname();
 
-public class Client {
-    public class FullName {
-        public String title;
-        public String first;
-        public String last;
-    }
+    String getName();
 
-    public FullName name;
+    String getPatronomic();
 
-    public String getSurname() {
-        return name.last;
-    }
+    String getGender();
 
-    public String getName() {
-        return name.first;
-    }
+    int getAge();
 
-    public String getPatronomic() {
-        return name.title;
-    }
+    String getBD();
 
-    public String patronymic;
-    public String gender;
+    long getInn();
 
-    public String getGender() {
-        return gender;
-    }
+    String getCountry();
 
-    public LocalDate birthDay;
+    String getRegion();
 
-    public class DateAndAge {
-        public Date date;
-        public int age;
-    }
+    String getCity();
 
-    public int getAge() {
-        return dob.age;
-    }
+    String getStreet();
 
-    public DateAndAge dob;
+    int getHouse();
 
-    public String gatBD() {
-        DateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy");
-        dateFormat.setLenient(false);
-        return dateFormat.format(dob.date);
-        //return birthDay.format(DateTimeFormatter.ofPattern("dd.MM.yyyy"));
-    }
+    String getIndex();
 
-    public int age() {
-        return Period.between(birthDay, LocalDate.now()).getYears();
-    }
-
-    public long inn;
-    public String nat;
-
-    public String getCountry() {
-        return nat;
-    }
-
-    public class Location {
-        public String state;
-        public String city;
-        public String street;
-        public String postcode;
-
-        public class Coordinates {
-            public double latitude;
-            public double longitude;
-        }
-
-        public Coordinates coordinates;
-
-        public class Timezone {
-            public String offset;
-            public String description;
-        }
-
-        public Timezone timezone;
-    }
-
-    public String getRegion() {
-        return location.state;
-    }
-
-    public String getCity() {
-        return location.city;
-    }
-
-    public String getStreet() {
-        Pattern pattern = Pattern.compile("\\D+");
-        Matcher streetMatch = pattern.matcher(location.street);
-        streetMatch.find();
-        return location.street.substring(streetMatch.start(),streetMatch.end());
-    }
-
-    public int getHouse() {
-        String []streetWords = location.street.split(" ");
-        try {
-            return Integer.decode(streetWords[0]);
-
-        }
-        catch (NumberFormatException ex){
-            return Integer.decode(streetWords[streetWords.length - 1]);
-
-        }
-    }
-
-    public String getIndex() {
-        return location.postcode;
-    }
-
-    public Location location;
-    public int home;
-    public int flat;
+    int getFlat();
 }
