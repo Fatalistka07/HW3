@@ -18,31 +18,30 @@ import java.util.*;
 
 public class Main {
 
-    public static final String ExcelFileName = "Clients.xls";
-    public static final String PdfFileName = "Clients.pdf";
+    public static final String EXCEL_FILE_NAME = "Clients.xls";
+    public static final String PDF_FILE_NAME = "Clients.pdf";
 
-    public static void main(String[] args) throws IOException, URISyntaxException {
+    public static void main(String[] args) {
         Random r = new Random();
         int n = 1 + r.nextInt(30);
 
         Client[] clients = generateClients(r, n);
 
         generateExcel(clients);
-
         generatePdf(clients);
     }
 
-    private static Client[] generateClients(Random r, int n) throws IOException {
-        ArrayList<String> cities = getArrayFromFilePath("./resources/Cities.txt");
-        ArrayList<String> countries = getArrayFromFilePath("./resources/Countries.txt");
-        ArrayList<String> manNames = getArrayFromFilePath("./resources/ManNames.txt");
-        ArrayList<String> manPatronymics = getArrayFromFilePath("./resources/ManPatronymics.txt");
-        ArrayList<String> manSurnames = getArrayFromFilePath("./resources/ManSurnames.txt");
-        ArrayList<String> regions = getArrayFromFilePath("./resources/Regions.txt");
-        ArrayList<String> streets = getArrayFromFilePath("./resources/Streets.txt");
-        ArrayList<String> womenNames = getArrayFromFilePath("./resources/WomenNames.txt");
-        ArrayList<String> womenPatronymics = getArrayFromFilePath("./resources/WomenPatronymics.txt");
-        ArrayList<String> womenSurnames = getArrayFromFilePath("./resources/WomenSurnames.txt");
+    private static Client[] generateClients(Random r, int n) {
+        ArrayList<String> cities = getArrayFromFilePath("src/main/resources/Cities.txt");
+        ArrayList<String> countries = getArrayFromFilePath("src/main/resources/Countries.txt");
+        ArrayList<String> manNames = getArrayFromFilePath("src/main/resources/ManNames.txt");
+        ArrayList<String> manPatronymics = getArrayFromFilePath("src/main/resources/ManPatronymics.txt");
+        ArrayList<String> manSurnames = getArrayFromFilePath("src/main/resources/ManSurnames.txt");
+        ArrayList<String> regions = getArrayFromFilePath("src/main/resources/Regions.txt");
+        ArrayList<String> streets = getArrayFromFilePath("src/main/resources/Streets.txt");
+        ArrayList<String> womenNames = getArrayFromFilePath("src/main/resources/WomenNames.txt");
+        ArrayList<String> womenPatronymics = getArrayFromFilePath("src/main/resources/WomenPatronymics.txt");
+        ArrayList<String> womenSurnames = getArrayFromFilePath("src/main/resources/WomenSurnames.txt");
 
         Client [] clients = new Client[n];
         for (int i = 0; i < n; i++) {
@@ -72,12 +71,16 @@ public class Main {
         return clients;
     }
 
-    private static ArrayList<String> getArrayFromFilePath(String filePath) throws IOException {
-        FileInputStream fstream = new FileInputStream(filePath);
-        Scanner scanner = new Scanner(new InputStreamReader(fstream));
+    private static ArrayList<String> getArrayFromFilePath(String filePath)  {
         ArrayList<String> result = new ArrayList<String>();
-        while ( scanner.hasNext()) {
-            result.add(scanner.nextLine());
+        try {
+            Scanner scanner = new Scanner(new InputStreamReader(new FileInputStream(filePath)));
+
+            while (scanner.hasNext()) {
+                result.add(scanner.nextLine());
+            }
+        } catch (IOException ex) {
+            System.out.println("Could not read data due to " + ex.getMessage());
         }
         return result;
     }
@@ -122,61 +125,68 @@ public class Main {
         return LocalDate.ofYearDay(year, day);
     }
 
-    private static void generateExcel(Client[] clients) throws IOException {
-        Workbook book = new HSSFWorkbook();
-        Sheet sheet = book.createSheet("Clients");
-        Row titleRow = sheet.createRow(0);
-        int colIx = 0;
-        titleRow.createCell(colIx++).setCellValue("Имя");
-        titleRow.createCell(colIx++).setCellValue("Фамилия");
-        titleRow.createCell(colIx++).setCellValue("Отчество");
-        titleRow.createCell(colIx++).setCellValue("Возраст");
-        titleRow.createCell(colIx++).setCellValue("Пол");
-        titleRow.createCell(colIx++).setCellValue("Дата рождения");
-        titleRow.createCell(colIx++).setCellValue("ИНН");
-        titleRow.createCell(colIx++).setCellValue("Индекс");
-        titleRow.createCell(colIx++).setCellValue("Страна");
-        titleRow.createCell(colIx++).setCellValue("Область");
-        titleRow.createCell(colIx++).setCellValue("Город");
-        titleRow.createCell(colIx++).setCellValue("Улица");
-        titleRow.createCell(colIx++).setCellValue("Дом");
-        titleRow.createCell(colIx++).setCellValue("Кв.");
+    private static void generateExcel(Client[] clients) {
+        String excelFilePath = new File(EXCEL_FILE_NAME).getAbsolutePath();
 
-        DataFormat format = book.createDataFormat();
-        CellStyle innStyle = book.createCellStyle();
-        innStyle.setDataFormat(format.getFormat("#"));
-        for (int rowIx = 1; rowIx <= clients.length; rowIx++) {
-            Row row = sheet.createRow(rowIx);
-            colIx = 0;
-            row.createCell(colIx++).setCellValue(clients[rowIx-1].name);
-            row.createCell(colIx++).setCellValue(clients[rowIx-1].surname);
-            row.createCell(colIx++).setCellValue(clients[rowIx-1].patronymic);
-            row.createCell(colIx++).setCellValue(clients[rowIx-1].age());
-            row.createCell(colIx++).setCellValue(clients[rowIx-1].sex);
-            row.createCell(colIx++).setCellValue(clients[rowIx-1].birthDayStr());
-            Cell innCell = row.createCell(colIx++);
-            innCell.setCellStyle(innStyle);
-            innCell.setCellValue(clients[rowIx-1].inn);
-            row.createCell(colIx++).setCellValue(clients[rowIx-1].index);
-            row.createCell(colIx++).setCellValue(clients[rowIx-1].country);
-            row.createCell(colIx++).setCellValue(clients[rowIx-1].region);
-            row.createCell(colIx++).setCellValue(clients[rowIx-1].city);
-            row.createCell(colIx++).setCellValue(clients[rowIx-1].street);
-            row.createCell(colIx++).setCellValue(clients[rowIx-1].home);
-            row.createCell(colIx++).setCellValue(clients[rowIx-1].flat);
+        try {
+            Workbook book = new HSSFWorkbook();
+            Sheet sheet = book.createSheet("Clients");
+            Row titleRow = sheet.createRow(0);
+            int colIx = 0;
+            titleRow.createCell(colIx++).setCellValue("Имя");
+            titleRow.createCell(colIx++).setCellValue("Фамилия");
+            titleRow.createCell(colIx++).setCellValue("Отчество");
+            titleRow.createCell(colIx++).setCellValue("Возраст");
+            titleRow.createCell(colIx++).setCellValue("Пол");
+            titleRow.createCell(colIx++).setCellValue("Дата рождения");
+            titleRow.createCell(colIx++).setCellValue("ИНН");
+            titleRow.createCell(colIx++).setCellValue("Индекс");
+            titleRow.createCell(colIx++).setCellValue("Страна");
+            titleRow.createCell(colIx++).setCellValue("Область");
+            titleRow.createCell(colIx++).setCellValue("Город");
+            titleRow.createCell(colIx++).setCellValue("Улица");
+            titleRow.createCell(colIx++).setCellValue("Дом");
+            titleRow.createCell(colIx++).setCellValue("Кв.");
+
+            DataFormat format = book.createDataFormat();
+            CellStyle innStyle = book.createCellStyle();
+            innStyle.setDataFormat(format.getFormat("#"));
+            for (int rowIx = 1; rowIx <= clients.length; rowIx++) {
+                Row row = sheet.createRow(rowIx);
+                colIx = 0;
+                row.createCell(colIx++).setCellValue(clients[rowIx - 1].name);
+                row.createCell(colIx++).setCellValue(clients[rowIx - 1].surname);
+                row.createCell(colIx++).setCellValue(clients[rowIx - 1].patronymic);
+                row.createCell(colIx++).setCellValue(clients[rowIx - 1].age());
+                row.createCell(colIx++).setCellValue(clients[rowIx - 1].sex);
+                row.createCell(colIx++).setCellValue(clients[rowIx - 1].birthDayStr());
+                Cell innCell = row.createCell(colIx++);
+                innCell.setCellStyle(innStyle);
+                innCell.setCellValue(clients[rowIx - 1].inn);
+                row.createCell(colIx++).setCellValue(clients[rowIx - 1].index);
+                row.createCell(colIx++).setCellValue(clients[rowIx - 1].country);
+                row.createCell(colIx++).setCellValue(clients[rowIx - 1].region);
+                row.createCell(colIx++).setCellValue(clients[rowIx - 1].city);
+                row.createCell(colIx++).setCellValue(clients[rowIx - 1].street);
+                row.createCell(colIx++).setCellValue(clients[rowIx - 1].home);
+                row.createCell(colIx++).setCellValue(clients[rowIx - 1].flat);
+            }
+            for (colIx = 0; colIx < 14; colIx++) {
+                sheet.autoSizeColumn(colIx);
+            }
+            book.write(new FileOutputStream(EXCEL_FILE_NAME));
+            book.close();
+
+            System.out.println(excelFilePath);
+        } catch (IOException ex) {
+            System.out.println("Could not write Excel file: " + excelFilePath);
         }
-        for (colIx = 0; colIx < 14; colIx++) {
-            sheet.autoSizeColumn(colIx);
-        }
-        book.write(new FileOutputStream(ExcelFileName));
-        book.close();
-        System.out.println(new File(ExcelFileName).getAbsolutePath());
     }
 
     private static void generatePdf(Client[] clients) {
         String xmlStr = generateXml(clients);
         convertXmlToPdf(xmlStr);
-        System.out.println(new File(PdfFileName).getAbsolutePath());
+        System.out.println(new File(PDF_FILE_NAME).getAbsolutePath());
     }
 
     private static String generateXml(Client[] clients) {
@@ -250,7 +260,7 @@ public class Main {
         TransformerFactory transformerFactory = TransformerFactory.newInstance();
 
         try {
-            Fop fop = fopFactory.newFop("application/pdf", new FileOutputStream(PdfFileName));
+            Fop fop = fopFactory.newFop("application/pdf", new FileOutputStream(PDF_FILE_NAME));
             Transformer transformer = transformerFactory.newTransformer();
             Source source = new StreamSource(new ByteArrayInputStream(xmlStr.getBytes("UTF8")));
             Result result = new SAXResult(fop.getDefaultHandler());
