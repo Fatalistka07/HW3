@@ -76,16 +76,16 @@ public class Main {
     }
 
     private static TxtGeneratedClient[] generateClients(Random r, int n) {
-        ArrayList<String> cities = getArrayFromFilePath("./resources/Cities.txt");
-        ArrayList<String> countries = getArrayFromFilePath("./resources/Countries.txt");
-        ArrayList<String> manNames = getArrayFromFilePath("./resources/ManNames.txt");
-        ArrayList<String> manPatronymics = getArrayFromFilePath("./resources/ManPatronymics.txt");
-        ArrayList<String> manSurnames = getArrayFromFilePath("./resources/ManSurnames.txt");
-        ArrayList<String> regions = getArrayFromFilePath("./resources/Regions.txt");
-        ArrayList<String> streets = getArrayFromFilePath("./resources/Streets.txt");
-        ArrayList<String> womenNames = getArrayFromFilePath("./resources/WomenNames.txt");
-        ArrayList<String> womenPatronymics = getArrayFromFilePath("./resources/WomenPatronymics.txt");
-        ArrayList<String> womenSurnames = getArrayFromFilePath("./resources/WomenSurnames.txt");
+        ArrayList<String> cities = getArrayFromFilePath("src/main/resources/Cities.txt");
+        ArrayList<String> countries = getArrayFromFilePath("src/main/resources/Countries.txt");
+        ArrayList<String> manNames = getArrayFromFilePath("src/main/resources/ManNames.txt");
+        ArrayList<String> manPatronymics = getArrayFromFilePath("src/main/resources/ManPatronymics.txt");
+        ArrayList<String> manSurnames = getArrayFromFilePath("src/main/resources/ManSurnames.txt");
+        ArrayList<String> regions = getArrayFromFilePath("src/main/resources/Regions.txt");
+        ArrayList<String> streets = getArrayFromFilePath("src/main/resources/Streets.txt");
+        ArrayList<String> womenNames = getArrayFromFilePath("src/main/resources/WomenNames.txt");
+        ArrayList<String> womenPatronymics = getArrayFromFilePath("src/main/resources/WomenPatronymics.txt");
+        ArrayList<String> womenSurnames = getArrayFromFilePath("src/main/resources/WomenSurnames.txt");
 
         TxtGeneratedClient[] clients = new TxtGeneratedClient[n];
         for (int i = 0; i < n; i++) {
