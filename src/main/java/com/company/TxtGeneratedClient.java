@@ -5,19 +5,19 @@ import java.time.Period;
 import java.time.format.DateTimeFormatter;
 
 public class TxtGeneratedClient implements Client {
-    public String name;
-    public String surname;
-    public String patronymic;
-    public String sex;
-    public LocalDate birthDay;
-    public long inn;
-    public int index;
-    public String country;
-    public String region;
-    public String city;
-    public String street;
-    public int home;
-    public int flat;
+    String name;
+    String surname;
+    String patronymic;
+    String sex;
+    LocalDate birthDay;
+    long inn;
+    int index;
+    String country;
+    String region;
+    String city;
+    String street;
+    int home;
+    int flat;
 
     @Override
     public String getSurname() {
@@ -50,8 +50,11 @@ public class TxtGeneratedClient implements Client {
     }
 
     @Override
-    public long getInn() {
-        return inn;
+    public String getBDForDB() {return birthDay.format(DateTimeFormatter.ofPattern("yyyy-MM-dd")); }
+
+    @Override
+    public String getInn() {
+        return Long.toString(inn);
     }
 
     @Override

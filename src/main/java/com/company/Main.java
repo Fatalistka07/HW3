@@ -15,13 +15,19 @@ import org.json.JSONObject;
 import java.io.*;
 import java.net.URISyntaxException;
 import java.net.UnknownHostException;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.time.LocalDate;
 import java.util.*;
+import java.nio.file.*;
 
 public class Main {
 
-    public static final String EXCEL_FILE_NAME = "Clients.xls";
-    public static final String RANDOMUSER_ME_API = "https://randomuser.me/api/";
+    private static final String EXCEL_FILE_NAME = "Clients.xls";
+    private static final String RANDOMUSER_ME_API = "https://randomuser.me/api/";
 
     public static void main(String[] args)  {
         Random r = new Random();
@@ -29,21 +35,125 @@ public class Main {
         Client[] clients;
 
         try {
-            clients = requestClients(n);
-        }
-        catch (UnknownHostException exception) {
+            clients = requestClientsFromAPI(n);
+            saveClientsToDB(clients);
+        } catch (UnknownHostException exception) {
             System.out.println("Connection to Internet is broken (can't load data from " + RANDOMUSER_ME_API
-                    + "). Generating data from local resources.");
-            clients = generateClients(r, n);
+                    + "). Getting data from DB.");
+            clients = requestClientsFromDB(n);
+            if (clients == null) {
+                System.out.println("Could not get data from DB. Generating data from local resources.");
+                clients = generateClientsFromFiles(r, n);
+            }
         } catch (IOException ioaEx) {
             System.out.println("Fatal error: "+ ioaEx.getMessage());
-            clients = generateClients(r, n);
+            clients = generateClientsFromFiles(r, n);
         }
 
         generateExcel(clients);
     }
 
-    private static ApiClient[] requestClients(int n) throws IOException {
+    private static void saveClientsToDB(Client[] clients) {
+        try(Connection conn = getConnection()) {
+            for (Client client:clients) {
+                try (Statement stmt = conn.createStatement()) {
+                    ResultSet existingPersonRs = stmt.executeQuery(
+                            "SELECT id, address_id FROM `person` WHERE " +
+                            "surname = \"" + client.getSurname() + "\" AND " +
+                            "name = \"" + client.getName()+ "\" AND " +
+                            "middlename = \"" + client.getPatronomic() + "\"");
+                    if (existingPersonRs.next()) {
+                        // Person already exists in DB - do update
+                        int personId = existingPersonRs.getInt(1);
+                        int addressId = existingPersonRs.getInt(2);
+
+                        stmt.executeUpdate("UPDATE `address` SET " +
+                                "postcode = \"" + client.getIndex() + "\", " +
+                                "country = \"" + client.getCountry() + "\", " +
+                                "region = \"" + client.getRegion() + "\", " +
+                                "city = \"" + client.getCity() + "\", " +
+                                "street = \""+ client.getStreet() + "\", " +
+                                "house = \"" + client.getHouse() + "\", " +
+                                "flat = \"" + client.getFlat() + "\" "+
+                                "WHERE id = " + addressId +";");
+
+                        stmt.executeUpdate("UPDATE `person` SET " +
+                                "birthday = \"" + client.getBDForDB() + "\", " +
+                                "gender = \"" + client.getGender() + "\", " +
+                                "inn = \"" + client.getInn() + "\" " +
+                                "WHERE id = " + personId +";");
+
+                    } else {
+                        // new person - insert to DB
+                        stmt.executeUpdate("INSERT INTO `address` (postcode, country, region, city, street, house, flat) VALUES (\"" +
+                                client.getIndex() + "\", \"" +
+                                client.getCountry() + "\", \"" +
+                                client.getRegion() + "\", \"" +
+                                client.getCity() + "\", \"" +
+                                client.getStreet() + "\", \"" +
+                                client.getHouse() + "\", \"" +
+                                client.getFlat() + "\");", Statement.RETURN_GENERATED_KEYS);
+                        ResultSet rs = stmt.getGeneratedKeys();
+                        rs.next();
+                        long addrKey = rs.getLong(1);
+                        stmt.executeUpdate("INSERT INTO `person` (surname, name, middlename, birthday, gender, inn, address_id) VALUES (\"" +
+                                client.getSurname() + "\", \"" +
+                                client.getName() + "\", \"" +
+                                client.getPatronomic() + "\", \"" +
+                                client.getBDForDB() + "\", \"" +
+                                client.getGender() + "\", \"" +
+                                client.getInn() + "\", \"" +
+                                addrKey + "\");");
+                    }
+                } catch (SQLException e) {
+                    System.out.println("Can add client info to DB:");
+                    e.printStackTrace();
+                }
+            }
+        } catch (Exception e) {
+            System.out.println("Could not connect to DB to save clients:");
+            e.printStackTrace();
+        }
+    }
+
+    private static Client[] requestClientsFromDB(int n) {
+        try(Connection conn = getConnection()) {
+            try (Statement stmt = conn.createStatement()) {
+                ResultSet rs = stmt.executeQuery("SELECT name, surname, middlename, birthday, gender, inn, postcode, country, region, city, street, house, flat FROM `person` JOIN `address` ON address.id = person.address_id LIMIT " + n);
+                if (!rs.next()) {
+                    // no persons in DB.
+                    return null;
+                }
+                Client[] clients = new DBClient[n];
+                int i = 0;
+                do {
+                    clients[i++] = new DBClient(rs);
+                } while (rs.next());
+                if (i < n){
+                    System.out.println("Not enough data in DB: only " + i + " persons, but required " + n);
+                    return null;
+                }
+                return clients;
+            }
+        } catch (Exception e) {
+            System.out.println("Could not connect to DB to get clients:");
+            e.printStackTrace();
+            return null;
+        }
+    }
+    private static Connection getConnection() throws SQLException, IOException{
+        Properties props = new Properties();
+        try(InputStream in = Files.newInputStream(Paths.get("database.properties"))){
+            props.load(in);
+        }
+        String url = props.getProperty("url");
+        String username = props.getProperty("username");
+        String password = props.getProperty("password");
+
+        return DriverManager.getConnection(url, username, password);
+    }
+
+    private static ApiClient[] requestClientsFromAPI(int n) throws IOException {
             ApiClient[] clients = new ApiClient[n];
         try {
             HttpClient client = HttpClientBuilder.create().build();
@@ -54,7 +164,7 @@ public class Main {
             HttpResponse response = client.execute(request);
             BufferedReader reader = new BufferedReader(new InputStreamReader(response.getEntity().getContent()));
             String line;
-            StringBuffer result = new StringBuffer();
+            StringBuilder result = new StringBuilder();
             while ((line = reader.readLine()) != null) {
                 result.append(line);
             }
@@ -64,7 +174,6 @@ public class Main {
             Random r = new Random();
             for (int i = 0; i < arrResults.length(); i++) {
                 JSONObject jsonClient = arrResults.getJSONObject(i);
-                jsonClient.toString();
                 clients[i] = mapper.readValue(jsonClient.toString(), ApiClient.class);
                 clients[i].inn = getRandInn(r);
                 clients[i].flat = 1 + r.nextInt(200);
@@ -75,7 +184,7 @@ public class Main {
         return clients;
     }
 
-    private static TxtGeneratedClient[] generateClients(Random r, int n) {
+    private static TxtGeneratedClient[] generateClientsFromFiles(Random r, int n) {
         ArrayList<String> cities = getArrayFromFilePath("src/main/resources/Cities.txt");
         ArrayList<String> countries = getArrayFromFilePath("src/main/resources/Countries.txt");
         ArrayList<String> manNames = getArrayFromFilePath("src/main/resources/ManNames.txt");
@@ -116,7 +225,7 @@ public class Main {
     }
 
     private static ArrayList<String> getArrayFromFilePath(String filePath) {
-        ArrayList<String> result = new ArrayList<String>();
+        ArrayList<String> result = new ArrayList<>();
         try {
             Scanner scanner = new Scanner(new InputStreamReader(new FileInputStream(filePath)));
 
@@ -189,7 +298,7 @@ public class Main {
             titleRow.createCell(colIx++).setCellValue("Город");
             titleRow.createCell(colIx++).setCellValue("Улица");
             titleRow.createCell(colIx++).setCellValue("Дом");
-            titleRow.createCell(colIx++).setCellValue("Кв.");
+            titleRow.createCell(colIx).setCellValue("Кв.");
 
             DataFormat format = book.createDataFormat();
             CellStyle innStyle = book.createCellStyle();
@@ -212,7 +321,7 @@ public class Main {
                 row.createCell(colIx++).setCellValue(clients[rowIx - 1].getCity());
                 row.createCell(colIx++).setCellValue(clients[rowIx - 1].getStreet());
                 row.createCell(colIx++).setCellValue(clients[rowIx - 1].getHouse());
-                row.createCell(colIx++).setCellValue(clients[rowIx - 1].getFlat());
+                row.createCell(colIx).setCellValue(clients[rowIx - 1].getFlat());
             }
             for (colIx = 0; colIx < 14; colIx++) {
                 sheet.autoSizeColumn(colIx);

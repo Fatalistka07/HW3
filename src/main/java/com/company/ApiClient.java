@@ -2,13 +2,11 @@ package com.company;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.time.LocalDate;
-import java.time.Period;
-import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+@SuppressWarnings("WeakerAccess")
 public class ApiClient implements Client {
     public class FullName {
         public String title;
@@ -37,7 +35,7 @@ public class ApiClient implements Client {
 
     @Override
     public String getGender() {
-        return gender;
+        return gender.substring(0,1);
     }
 
     public class DateAndAge {
@@ -55,15 +53,20 @@ public class ApiClient implements Client {
     }
 
     @Override
+    public String getBDForDB() {
+        DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+        dateFormat.setLenient(false);
+        return dateFormat.format(dob.date);
+    }
+
+    @Override
     public int getAge() {
         return dob.age;
     }
 
     public long inn;
     @Override
-    public long getInn(){
-        return inn;
-    }
+    public String getInn(){ return Long.toString(inn); }
     public String nat;
 
     @Override
@@ -107,8 +110,9 @@ public class ApiClient implements Client {
     public String getStreet() {
         Pattern pattern = Pattern.compile("\\D+");
         Matcher streetMatch = pattern.matcher(location.street);
-        streetMatch.find();
-        return location.street.substring(streetMatch.start(),streetMatch.end());
+        if (streetMatch.find())
+            return location.street.substring(streetMatch.start(),streetMatch.end());
+        return "";
     }
 
     @Override

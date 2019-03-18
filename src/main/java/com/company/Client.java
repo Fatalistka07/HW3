@@ -12,8 +12,9 @@ public interface Client {
     int getAge();
 
     String getBD();
+    String getBDForDB();
 
-    long getInn();
+    String getInn();
 
     String getCountry();
 
